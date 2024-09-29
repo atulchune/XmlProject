@@ -17,11 +17,31 @@
       background: url('https://images.unsplash.com/photo-1512820790803-83ca734da794') no-repeat center center fixed;
       background-size: cover;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
-      height: 100vh;
+      min-height: 100vh;
       color: #fff;
       backdrop-filter: blur(5px);
+    }
+
+    header {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header img {
+      height: 50px;
+    }
+
+    header h1 {
+      color: #fff;
+      margin-left: 20px;
+      font-size: 2rem;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
     }
 
     h1 {
@@ -32,13 +52,30 @@
       animation: fadeIn 2s ease;
     }
 
+    /* Search Bar */
+    .search-bar {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .search-bar input {
+      width: 300px;
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      outline: none;
+      margin-right: 10px;
+    }
+
     /* Table Styles */
     table {
-      width: 80%;
+      width: 100%;
       max-width: 1000px;
       margin: 0 auto;
       border-collapse: collapse;
-      background-color: rgba(255, 255, 255, 0.8);
+      background-color: rgba(255, 255, 255, 0.9);
       border-radius: 10px;
       overflow: hidden;
       animation: slideUp 1.5s ease-out;
@@ -49,6 +86,7 @@
       padding: 15px;
       text-align: left;
       border-bottom: 1px solid #ddd;
+      transition: background-color 0.3s;
     }
 
     th {
@@ -58,6 +96,41 @@
 
     tr:nth-child(even) {
       background-color: rgba(76, 175, 80, 0.1);
+    }
+
+    tr:hover {
+      background-color: rgba(76, 175, 80, 0.3);
+      cursor: pointer;
+    }
+
+    td {
+      color: black;
+    }
+
+    /* Pagination */
+    .pagination {
+      margin: 20px auto;
+      text-align: center;
+    }
+
+    .pagination button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      margin: 0 5px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+
+    .pagination button:disabled {
+      background-color: grey;
+      cursor: not-allowed;
+    }
+
+    .pagination button:hover:enabled {
+      background-color: #45a049;
     }
 
     /* Responsive Design */
@@ -101,12 +174,37 @@
         opacity: 1;
       }
     }
+
+    /* No Results Styles */
+    .no-results {
+      text-align: center;
+      margin: 20px 0;
+      font-size: 1.5rem;
+      color: red;
+    }
+    .round{
+        border-radius: 5px;
+    }
   </style>
 </head>
 <body>
+
+  <header>
+    <img src="logo.png" class="round" alt="Bookstore Logo">
+    <div></div>
+    
+  </header>
+
   <div class="container">
     <h1>Book List</h1>
-    <table>
+
+    <!-- Search Bar -->
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search books..." onkeyup="searchBooks()">
+    </div>
+
+    <!-- Table -->
+    <table id="bookTableWrapper">
       <thead>
         <tr>
           <th>Topic</th>
@@ -117,9 +215,24 @@
       </thead>
       <tbody id="bookTable"></tbody>
     </table>
+
+    <!-- No Results Message -->
+    <div class="no-results" id="noResults" style="display: none;">No books found.</div>
+
+    <!-- Pagination -->
+    <div class="pagination" id="pagination">
+      <button id="prevPage" onclick="prevPage()">Prev</button>
+      <span id="pageNumber"></span>
+      <button id="nextPage" onclick="nextPage()">Next</button>
+    </div>
   </div>
 
   <script>
+    let currentPage = 1;
+    const rowsPerPage = 5;
+    let filteredBooks = [];
+    let allBooks = [];
+
     // Load the XML file using an AJAX request
     function loadXML() {
       var xhr = new XMLHttpRequest();
@@ -128,7 +241,6 @@
         if (xhr.readyState === 4 && xhr.status === 200) {
           var xmlDoc = xhr.responseXML;
           var topics = xmlDoc.getElementsByTagName("topic");
-          var tableBody = document.getElementById("bookTable");
 
           for (var i = 0; i < topics.length; i++) {
             var topicName = topics[i].getElementsByTagName("name")[0].textContent;
@@ -139,19 +251,92 @@
               var title = books[j].getElementsByTagName("title")[0].textContent;
               var author = books[j].getElementsByTagName("author")[0].textContent;
 
-              // Insert the data into the table
-              var row = document.createElement("tr");
-              row.innerHTML = `<td>${topicName}</td><td>${isbn}</td><td>${title}</td><td>${author}</td>`;
-              tableBody.appendChild(row);
+              allBooks.push({ topicName, isbn, title, author });
             }
           }
+
+          filteredBooks = [...allBooks];
+          renderTable();
         }
       };
       xhr.send();
     }
 
-    // Call the function when the window loads
+    // Render the table based on the current page
+    function renderTable() {
+      const startIndex = (currentPage - 1) * rowsPerPage;
+      const endIndex = startIndex + rowsPerPage;
+      const paginatedBooks = filteredBooks.slice(startIndex, endIndex);
+
+      const tableBody = document.getElementById("bookTable");
+      const noResultsDiv = document.getElementById("noResults");
+      tableBody.innerHTML = '';
+
+      if (paginatedBooks.length === 0) {
+        tableBody.style.display = "none";
+        noResultsDiv.style.display = "block";
+      } else {
+        noResultsDiv.style.display = "none";
+        tableBody.style.display = "table-row-group";
+
+        paginatedBooks.forEach(book => {
+          const row = document.createElement("tr");
+          row.innerHTML = `<td>${book.topicName}</td><td>${book.isbn}</td><td>${book.title}</td><td>${book.author}</td>`;
+          tableBody.appendChild(row);
+        });
+      }
+
+      updatePaginationButtons();
+      updatePageNumber();
+    }
+
+    // Update pagination buttons
+    function updatePaginationButtons() {
+      const prevButton = document.getElementById("prevPage");
+      const nextButton = document.getElementById("nextPage");
+
+      prevButton.disabled = currentPage === 1;
+      nextButton.disabled = currentPage * rowsPerPage >= filteredBooks.length;
+    }
+
+    // Update the page number display
+    function updatePageNumber() {
+      const pageNumber = document.getElementById("pageNumber");
+      const totalPages = Math.ceil(filteredBooks.length / rowsPerPage);
+      pageNumber.innerText = `Page ${currentPage} of ${totalPages}`;
+    }
+
+    // Search books
+    function searchBooks() {
+      const searchInput = document.getElementById("searchInput").value.toLowerCase();
+      filteredBooks = allBooks.filter(book => {
+        return book.title.toLowerCase().includes(searchInput) ||
+               book.author.toLowerCase().includes(searchInput) ||
+               book.isbn.includes(searchInput);
+      });
+
+      currentPage = 1;
+      renderTable();
+    }
+
+    // Next and Previous page functions
+    function nextPage() {
+      if (currentPage * rowsPerPage < filteredBooks.length) {
+        currentPage++;
+        renderTable();
+      }
+    }
+
+    function prevPage() {
+      if (currentPage > 1) {
+        currentPage--;
+        renderTable();
+      }
+    }
+
+    // Load the XML when the window loads
     window.onload = loadXML;
   </script>
+
 </body>
 </html>
