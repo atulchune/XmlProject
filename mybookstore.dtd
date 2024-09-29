@@ -1,0 +1,9 @@
+<!DOCTYPE bookstore [
+  <!ELEMENT bookstore (name, topic)>
+  <!ELEMENT name (#PCDATA)>
+  <!ELEMENT topic (name, ISBN)>
+  <!ELEMENT ISBN (#PCDATA)>
+  <!ELEMENT title (#PCDATA)>
+  <!ELEMENT author (#PCDATA)>
+  <!ELEMENT book (title, author)>
+]>

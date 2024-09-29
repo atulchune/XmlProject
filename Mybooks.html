@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Books</title>
+  <style>
+    /* Global Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      background: url('https://images.unsplash.com/photo-1512820790803-83ca734da794') no-repeat center center fixed;
+      background-size: cover;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+      backdrop-filter: blur(5px);
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+      animation: fadeIn 2s ease;
+    }
+
+    /* Table Styles */
+    table {
+      width: 80%;
+      max-width: 1000px;
+      margin: 0 auto;
+      border-collapse: collapse;
+      background-color: rgba(255, 255, 255, 0.8);
+      border-radius: 10px;
+      overflow: hidden;
+      animation: slideUp 1.5s ease-out;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    th, td {
+      padding: 15px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    tr:nth-child(even) {
+      background-color: rgba(76, 175, 80, 0.1);
+    }
+
+    /* Responsive Design */
+    @media screen and (max-width: 768px) {
+      table {
+        width: 90%;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      th, td {
+        padding: 10px;
+      }
+    }
+
+    @media screen and (max-width: 480px) {
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      th, td {
+        padding: 8px;
+      }
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Book List</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>Topic</th>
+          <th>ISBN</th>
+          <th>Title</th>
+          <th>Author</th>
+        </tr>
+      </thead>
+      <tbody id="bookTable"></tbody>
+    </table>
+  </div>
+
+  <script>
+    // Load the XML file using an AJAX request
+    function loadXML() {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', 'Mybookstore.xml', true);
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+          var xmlDoc = xhr.responseXML;
+          var topics = xmlDoc.getElementsByTagName("topic");
+          var tableBody = document.getElementById("bookTable");
+
+          for (var i = 0; i < topics.length; i++) {
+            var topicName = topics[i].getElementsByTagName("name")[0].textContent;
+            var isbn = topics[i].getElementsByTagName("ISBN")[0].textContent;
+            var books = topics[i].getElementsByTagName("book");
+
+            for (var j = 0; j < books.length; j++) {
+              var title = books[j].getElementsByTagName("title")[0].textContent;
+              var author = books[j].getElementsByTagName("author")[0].textContent;
+
+              // Insert the data into the table
+              var row = document.createElement("tr");
+              row.innerHTML = `<td>${topicName}</td><td>${isbn}</td><td>${title}</td><td>${author}</td>`;
+              tableBody.appendChild(row);
+            }
+          }
+        }
+      };
+      xhr.send();
+    }
+
+    // Call the function when the window loads
+    window.onload = loadXML;
+  </script>
+</body>
+</html>
